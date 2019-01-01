@@ -1,0 +1,201 @@
+<html>
+
+<head>
+    <h1 style="text-align:center">真人大战AlphaGo</h1>
+    <script>
+        var x = parseInt(prompt("巧克力长："));
+        var y = parseInt(prompt("巧克力宽："));
+        //var blank = "blank.jpeg";
+        var blank = "https://www.math.ucla.edu/~tom/Games/blank.gif"
+        //var poison = "poison.jpeg";
+        var poison = "https://www.math.ucla.edu/~tom/Games/poison.jpeg"
+        //var brown = "brown.jpeg";
+        var brown = "https://www.math.ucla.edu/~tom/Games/brown.jpeg"
+        //var help = "help.jpeg";
+        var help = "http://pic.616pic.com/ys_bnew_img/00/04/17/3Sd12m4wcQ.jpg";
+        var count = 0;
+        var Win = new Map();
+        var Next = new Map();
+        class Game {
+            constructor(arg) {
+                this.bz = arg;
+            }
+            isWin() {
+                var key = this.bz.sort(function (x, y) {
+                    if (x[0] < y[0])
+                        return -1;
+                    if (x[0] > y[0])
+                        return 1;
+                    return 0;
+                }).toString();
+                if (Win.has(key)) {
+                    return Win.get(key);
+                }
+                if (this.isEnd()) {
+                    Win.set(key, true);
+                    return true;
+                }
+                var canEatArr = this.getcanEat();
+                for (var [m, n] of canEatArr) {
+                    var new_game = new Game(JSON.parse(JSON.stringify(this.bz)));
+                    new_game.Eat(m, n);
+                    if (!new_game.isWin()) {
+                        Win.set(key, true);
+                        return true;
+                    }
+                }
+                Win.set(key, false);
+                return false;
+            }
+            isEnd() {
+                if (this.bz.length > 1)
+                    return false;
+                return true;
+            }
+            getNiceNext() {
+                var key = this.bz.sort(function (x, y) {
+                    if (x[0] < y[0])
+                        return -1;
+                    if (x[0] > y[0])
+                        return 1;
+                    return 0;
+                }).toString();
+                if (Next.has(key)) {
+                    return Next.get(key);
+                }
+                var canEatArr = this.getcanEat();
+                if (this.isWin()) {
+                    for (var [m, n] of canEatArr) {
+                        var new_game = new Game(JSON.parse(JSON.stringify(this.bz)));
+                        new_game.Eat(m, n);
+                        if (!new_game.isWin()) {
+                            Next.set(key, [m, n]);
+                            return [m, n];
+                        }
+                    }
+                }
+                this.bz.sort(function (x, y) {
+                    if (x[0] < y[0])
+                        return -1;
+                    if (x[0] > y[0])
+                        return 1;
+                    return 0;
+                });
+                var index = new Date().getTime() % (this.bz.length - 1);
+                return [this.bz[index + 1][0] - 1, this.bz[index][1] - 1];
+            }
+            canEat(i, j) {
+                for (var [m, n] of this.bz) {
+                    if (m <= i && n <= j) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            getcanEat() {
+                var retArr = [];
+                for (var i = 0; i < x; i++) {
+                    for (var j = 0; j < y; j++) {
+                        if (this.canEat(i, j))
+                            retArr.push([i, j]);
+                        else
+                            break;
+                    }
+                }
+                return retArr;
+            }
+            Eat(i, j) {
+                this.bz = this.bz.filter(function (x) {
+                    if (x[0] >= i && x[1] >= j)
+                        return false;
+                    return true;
+                });
+                this.bz.push([i, j]);
+            }
+        }
+        var globe_game = new Game([[x, 0], [0, y]]);
+        globe_game.isWin();
+        function change(i, j) {
+            return x * (y - j - 1) + i;
+        }
+        function Brash(i, j) {
+            for (var m = i; m < x; m++) {
+                for (var n = j; n < y; n++) {
+                    if (document.images[change(m, n)].src !== blank)
+                        document.images[change(m, n)].src = blank;
+                }
+            }
+        }
+        function Play(i, j) {
+            if (globe_game.canEat(i, j)) {
+                globe_game.Eat(i, j);
+                Brash(i, j);
+                if (globe_game.isEnd()) {
+                    alert("人还是打不过“狗”的啊！");
+                    reStart();
+                    return;
+                }
+                var [m, n] = globe_game.getNiceNext();
+                setTimeout("", 1000);
+                globe_game.Eat(m, n);
+                Brash(m, n);
+                if (globe_game.isEnd()) {
+                    if (count > 0)
+                        alert("有本事别用提示！");
+                    else
+                        alert("牛逼牛逼，我投降！");
+                    reStart();
+                    return;
+                }
+
+            }
+        }
+        function reStart() {
+            count = 0;
+            for (var i = 0; i < x; i++) {
+                for (var j = 0; j < y; j++) {
+                    document.images[change(i, j)].src = brown;
+                }
+            }
+            document.images[change(0, 0)].src = poison;
+            globe_game = new Game([[x, 0], [0, y]]);
+        }
+        function Help() {
+            count++;
+            var [m, n] = globe_game.getNiceNext();
+            document.images[change(m, n)].src = help;
+        }
+    </script>
+</head>
+
+
+<!--body background="background.gif"-->
+
+<body background="http://www.w3school.com.cn/i/eg_background.jpg">
+    <center>
+        <p>下面是一大块巧克力，你每次可以选择一小块巧克力，</p>
+        <p>吃掉它以及在它右上方的所有巧克力</p>
+        <p>左下角小块巧克力有毒，你应该尽量避免吃到它</p>
+        <p>不到万不得已不要看提示</p>
+        <form name=game>
+            <table border=8 cellpadding=0 cellspacing=0>
+                <tr>
+                    <script>
+                        for (var j = y - 1; j >= 0; j--) {
+                            for (var i = 0; i < x; i++) {
+                                document.write('<td><a href="javascript:Play(' + i + ',' + j + ')">'
+                                    + '<img src=' + brown + ' border=0 height=60 width=60></a></td>');
+                            }
+                            document.write("</tr><tr>");
+                        }
+                        document.images[change(0, 0)].src = poison;
+                    </script>
+                </tr>
+            </table>
+            <input type=button value='新游戏' onClick='reStart();'>
+            <input type=button value='提示' onClick='Help();'>
+        </form>
+    </center>
+</body>
+
+</html>
